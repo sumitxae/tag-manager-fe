@@ -34,6 +34,7 @@ export const CompanyList: React.FC<CompanyListProps> = ({ refreshTrigger }) => {
         setCompanies(data);
       } catch (err) {
         setError("Failed to load companies.");
+        console.error("Error fetching companies:", err);
       } finally {
         setIsLoading(false);
       }

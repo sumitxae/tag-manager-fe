@@ -12,6 +12,7 @@ import {
   FormControl,
   InputLabel,
   Typography,
+  SelectChangeEvent,
 } from "@mui/material";
 import {
   createCompany,
@@ -36,13 +37,22 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>
-  ) => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name as string]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "startNumber" ? Number(value) : value,
+    }));
   };
 
+  // Handler specifically for the Select dropdown
+  const handleSelectChange = (e: SelectChangeEvent<EpcScheme>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -76,7 +86,7 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
         label="Company Name"
         name="name"
         value={formData.name}
-        onChange={handleChange}
+        onChange={handleTextChange}
         required
         fullWidth
         disabled={isLoading}
@@ -86,7 +96,7 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
         name="startNumber"
         type="number"
         value={formData.startNumber}
-        onChange={handleChange}
+        onChange={handleTextChange}
         required
         fullWidth
         disabled={isLoading}
@@ -94,12 +104,13 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
       />
       <FormControl fullWidth required disabled={isLoading}>
         <InputLabel id="epc-scheme-label">EPC Scheme</InputLabel>
+        {/* @typescript-eslint/no-explicit-any */}
         <Select
           labelId="epc-scheme-label"
           name="epcScheme"
           value={formData.epcScheme}
           label="EPC Scheme"
-          onChange={handleChange as any} // MUI Select has a different event type
+          onChange={handleSelectChange}
         >
           {Object.values(EpcScheme).map((scheme) => (
             <MenuItem key={scheme} value={scheme}>

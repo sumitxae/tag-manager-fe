@@ -14,6 +14,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  SelectChangeEvent,
 } from "@mui/material";
 import { Upload, CheckCircle } from "@mui/icons-material";
 
@@ -61,6 +62,7 @@ export const ProcessingForm: React.FC = () => {
         const companyList = await getCompaniesForDropdown();
         setCompanies(companyList);
       } catch (error) {
+        console.log("Error fetching companies:", error);
         setCompaniesError(
           "Failed to load company list. Please refresh the page."
         );
@@ -101,7 +103,7 @@ export const ProcessingForm: React.FC = () => {
 
   // NEW: Handler for the company dropdown
   const handleCompanyChange = useCallback(
-    (event: any) => {
+    (event: SelectChangeEvent<string>) => {
       clearMessages();
       setFormState((prev) => ({
         ...prev,
