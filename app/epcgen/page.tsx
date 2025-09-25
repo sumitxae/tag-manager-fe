@@ -21,7 +21,6 @@ import { Upload, CheckCircle } from "@mui/icons-material";
 import { validateExcelFile } from "@/utils/FileValidation";
 import {
   processExcelFile,
-  mockProcessExcelFile,
   getCompaniesForDropdown, // NEW: Import function to get companies
   CompanyDropdownDto, // NEW: Import type for company dropdown
   ApiError,
