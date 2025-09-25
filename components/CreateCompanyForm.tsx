@@ -36,13 +36,24 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [startNumberError, setStartNumberError] = useState("");
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "startNumber" ? Number(value) : value,
-    }));
+    if (name === "startNumber") {
+      const numericValue = value.replace(/[^0-9]/g, ""); // Allow only digits
+      if (numericValue.length > 10) return; // Prevent typing more than 10 digits
+
+      setFormData((prev) => ({ ...prev, [name]: Number(numericValue) }));
+
+      if (numericValue.length !== 10 && numericValue.length > 0) {
+        setStartNumberError("Start number must be exactly 10 digits.");
+      } else {
+        setStartNumberError(""); // Clear error if valid
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // Handler specifically for the Select dropdown
@@ -55,6 +66,11 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.startNumber.toString().length !== 10) {
+      setStartNumberError("Start number must be exactly 10 digits.");
+      return;
+    }
     setIsLoading(true);
     setError("");
     setSuccess("");
@@ -95,12 +111,16 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
         label="Default Start Number"
         name="startNumber"
         type="number"
-        value={formData.startNumber}
+        value={formData.startNumber === 0 ? "" : formData.startNumber}
         onChange={handleTextChange}
         required
         fullWidth
         disabled={isLoading}
-        inputProps={{ min: 10 }}
+        error={!!startNumberError}
+        helperText={startNumberError || "Must be a 10-digit number."}
+        inputProps={{
+          maxLength: 10,
+        }}
       />
       <FormControl fullWidth required disabled={isLoading}>
         <InputLabel id="epc-scheme-label">EPC Scheme</InputLabel>
@@ -124,7 +144,12 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
       <Button
         type="submit"
         variant="contained"
-        disabled={isLoading || !formData.name}
+        disabled={
+          isLoading ||
+          !formData.name ||
+          !!startNumberError ||
+          formData.startNumber.toString().length !== 10
+        }
         sx={{ mt: 1, py: 1.5 }}
       >
         {isLoading ? <CircularProgress size={24} /> : "Add Company"}
