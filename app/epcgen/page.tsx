@@ -133,17 +133,21 @@ export const ProcessingForm: React.FC = () => {
         const useMockApi = process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
 
         // CHANGED: Pass selectedCompany instead of epcNumber
-        const processedFileBlob = useMockApi
-          ? await mockProcessExcelFile(
-              formState.file!,
-              formState.selectedCompany
-            )
-          : await processExcelFile(formState.file!, formState.selectedCompany);
+        // const processedFileBlob = useMockApi
+        //   ? await mockProcessExcelFile(
+        //       formState.file!,
+        //       formState.selectedCompany
+        //     )
+        //   : await processExcelFile(formState.file!, formState.selectedCompany);
 
+        const { blob: processedFileBlob, filename } = await processExcelFile(
+          formState.file!,
+          formState.selectedCompany
+        );
         const url = URL.createObjectURL(processedFileBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `processed_${formState.file!.name}`;
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

@@ -100,7 +100,7 @@ export const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
         required
         fullWidth
         disabled={isLoading}
-        inputProps={{ min: 1 }}
+        inputProps={{ min: 10 }}
       />
       <FormControl fullWidth required disabled={isLoading}>
         <InputLabel id="epc-scheme-label">EPC Scheme</InputLabel>

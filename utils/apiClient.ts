@@ -107,7 +107,7 @@ export async function getCompaniesForDropdown(): Promise<CompanyDropdownDto[]> {
 export const processExcelFile = async (
   file: File,
   companyName: string
-): Promise<Blob> => {
+): Promise<{ blob: Blob; filename: string }> => {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -131,12 +131,17 @@ export const processExcelFile = async (
       throw new ApiError(errorMessage, response.status);
     }
 
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/")) {
-      throw new ApiError("Invalid response from server, expected a file.", 500);
+    const disposition = response.headers.get("Content-Disposition");
+    let filename = "processed_files.zip"; // A fallback filename
+    if (disposition && disposition.indexOf("attachment") !== -1) {
+      const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+      const matches = filenameRegex.exec(disposition);
+      if (matches != null && matches[1]) {
+        filename = matches[1].replace(/['"]/g, "");
+      }
     }
-
-    return response.blob();
+    const blob = await response.blob();
+    return { blob, filename };
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -154,23 +159,23 @@ export const processExcelFile = async (
  * @param companyName - The name of the company.
  * @returns Promise<Blob> - Mock processed file as a Blob.
  */
-export const mockProcessExcelFile = async (
-  file: File,
-  companyName: string
-): Promise<Blob> => {
-  console.warn(`Mock API call for company: ${companyName}`);
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+// export const mockProcessExcelFile = async (
+//   file: File,
+//   companyName: string
+// ): Promise<Blob> => {
+//   console.warn(`Mock API call for company: ${companyName}`);
+//   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  if (file.size > 10 * 1024 * 1024) {
-    throw new ApiError("File size too large (Max 10MB).");
-  }
+//   if (file.size > 10 * 1024 * 1024) {
+//     throw new ApiError("File size too large (Max 10MB).");
+//   }
 
-  const startNum = 1;
-  const csvContent = `Product Name,EPC Number,UPC Code,Status
-Product A,${startNum},123456789012,Processed
-Product B,${startNum + 1},123456789013,Processed`;
+//   const startNum = 1;
+//   const csvContent = `Product Name,EPC Number,UPC Code,Status
+// Product A,${startNum},123456789012,Processed
+// Product B,${startNum + 1},123456789013,Processed`;
 
-  return new Blob([csvContent], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-};
+//   return new Blob([csvContent], {
+//     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+//   });
+// };
