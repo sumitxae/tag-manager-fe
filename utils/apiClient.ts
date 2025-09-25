@@ -44,7 +44,7 @@ export interface Company {
  */
 export async function getCompanies(): Promise<Company[]> {
   const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
   const response = await fetch(`${baseUrl}/company`);
   if (!response.ok) {
     const errorData = await response.json();
@@ -63,7 +63,7 @@ export async function createCompany(
   companyData: CreateCompanyDto
 ): Promise<Company> {
   const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
   const response = await fetch(`${baseUrl}/company`, {
     method: "POST",
     headers: {
@@ -84,7 +84,7 @@ export async function createCompany(
 
 export async function getCompaniesForDropdown(): Promise<CompanyDropdownDto[]> {
   const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
   const response = await fetch(`${baseUrl}/company/dropdown`);
   if (!response.ok) {
     const errorData = await response.json();
@@ -110,10 +110,11 @@ export const processExcelFile = async (
 ): Promise<{ blob: Blob; filename: string }> => {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("companyName", companyName);
 
   try {
     const baseUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
     const response = await fetch(`${baseUrl}/generator/process/`, {
       method: "POST",
       body: formData,

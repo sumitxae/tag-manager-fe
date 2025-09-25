@@ -32,7 +32,7 @@ import { FileUpload } from "@/components/FileUpload";
 // NEW: Updated form state interface
 interface FormState {
   file: File | null;
-  selectedCompany: string; // CHANGED: from epcNumber to selectedCompany
+  companyName: string; // CHANGED: from epcNumber to selectedCompany
   isSubmitting: boolean;
   submitError: string;
   successMessage: string;
@@ -41,7 +41,7 @@ interface FormState {
 export const ProcessingForm: React.FC = () => {
   const [formState, setFormState] = useState<FormState>({
     file: null,
-    selectedCompany: "", // CHANGED: Initialize as empty string
+    companyName: "", // CHANGED: Initialize as empty string
     isSubmitting: false,
     submitError: "",
     successMessage: "",
@@ -106,7 +106,7 @@ export const ProcessingForm: React.FC = () => {
       clearMessages();
       setFormState((prev) => ({
         ...prev,
-        selectedCompany: event.target.value,
+        companyName: event.target.value,
       }));
     },
     [clearMessages]
@@ -117,7 +117,7 @@ export const ProcessingForm: React.FC = () => {
       e.preventDefault();
 
       // Basic validation check
-      if (!formState.file || !formState.selectedCompany) {
+      if (!formState.file || !formState.companyName) {
         return;
       }
 
@@ -138,10 +138,9 @@ export const ProcessingForm: React.FC = () => {
         //       formState.selectedCompany
         //     )
         //   : await processExcelFile(formState.file!, formState.selectedCompany);
-
         const { blob: processedFileBlob, filename } = await processExcelFile(
           formState.file!,
-          formState.selectedCompany
+          formState.companyName
         );
         const url = URL.createObjectURL(processedFileBlob);
         const link = document.createElement("a");
@@ -157,7 +156,7 @@ export const ProcessingForm: React.FC = () => {
           isSubmitting: false,
           successMessage: "File processed successfully and downloaded!",
           file: null,
-          selectedCompany: "", // Reset selected company
+          companyName: "", // Reset selected company
         }));
         setFileError("");
       } catch (error) {
@@ -170,11 +169,11 @@ export const ProcessingForm: React.FC = () => {
         }));
       }
     },
-    [formState.file, formState.selectedCompany]
+    [formState.file, formState.companyName]
   );
 
   // CHANGED: Updated form validation check
-  const isFormValid = formState.file && formState.selectedCompany && !fileError;
+  const isFormValid = formState.file && formState.companyName && !fileError;
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
@@ -206,7 +205,7 @@ export const ProcessingForm: React.FC = () => {
                 <InputLabel id="company-select-label">Company</InputLabel>
                 <Select
                   labelId="company-select-label"
-                  value={formState.selectedCompany}
+                  value={formState.companyName}
                   label="Company"
                   onChange={handleCompanyChange}
                 >
