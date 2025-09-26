@@ -22,7 +22,7 @@ export enum EpcScheme {
 // Matches the CreateCompanyDto on the backend
 export interface CreateCompanyDto {
   name: string;
-  startNumber: number;
+  startNumber: number | string;
   epcScheme: EpcScheme;
 }
 

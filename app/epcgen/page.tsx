@@ -1,67 +1,46 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Container,
-  Paper,
-  Typography,
-  Button,
-  Box,
-  CircularProgress,
-  Alert,
-  Collapse,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  SelectChangeEvent,
-} from "@mui/material";
-import { Upload, CheckCircle } from "@mui/icons-material";
-
+  Building2,
+  Upload,
+  FileSpreadsheet,
+  ChevronDown,
+  CircleCheck as CheckCircle,
+  CircleAlert as AlertCircle,
+  Loader2 as Spinner, // Using a different spinner icon for clarity
+} from "lucide-react";
 import { validateExcelFile } from "@/utils/FileValidation";
 import {
   processExcelFile,
-  getCompaniesForDropdown, // NEW: Import function to get companies
-  CompanyDropdownDto, // NEW: Import type for company dropdown
+  getCompaniesForDropdown,
+  CompanyDropdownDto,
   ApiError,
 } from "@/utils/apiClient";
-import { FileUpload } from "@/components/FileUpload";
-// REMOVED: No longer need the EPCInput component
-// import { EPCInput } from "@/components/EPCInput";
 
-// NEW: Updated form state interface
-interface FormState {
-  file: File | null;
-  companyName: string; // CHANGED: from epcNumber to selectedCompany
-  isSubmitting: boolean;
-  submitError: string;
-  successMessage: string;
-}
+export default function UploadPage() {
+  // State for form inputs
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState("");
 
-export const ProcessingForm: React.FC = () => {
-  const [formState, setFormState] = useState<FormState>({
-    file: null,
-    companyName: "", // CHANGED: Initialize as empty string
-    isSubmitting: false,
-    submitError: "",
-    successMessage: "",
-  });
-
-  // NEW: State for the company dropdown
+  // State for company data fetching
   const [companies, setCompanies] = useState<CompanyDropdownDto[]>([]);
   const [companiesLoading, setCompaniesLoading] = useState(true);
   const [companiesError, setCompaniesError] = useState("");
 
-  const [fileError, setFileError] = useState<string>("");
+  // State for submission process
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // NEW: useEffect to fetch companies when the component mounts
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
         const companyList = await getCompaniesForDropdown();
         setCompanies(companyList);
       } catch (error) {
-        console.log("Error fetching companies:", error);
+        console.error("Error fetching companies:", error);
         setCompaniesError(
           "Failed to load company list. Please refresh the page."
         );
@@ -73,215 +52,305 @@ export const ProcessingForm: React.FC = () => {
   }, []);
 
   const clearMessages = useCallback(() => {
-    setFormState((prev) => ({
-      ...prev,
-      submitError: "",
-      successMessage: "",
-    }));
+    setFileError("");
+    setSubmitError("");
+    setSuccessMessage("");
   }, []);
 
-  const handleFileSelect = useCallback(
-    (file: File | null) => {
+  const handleCompanySelect = useCallback(
+    (companyId: string) => {
       clearMessages();
+      setSelectedCompanyId(companyId);
+      // Close the dropdown manually if needed by focusing away
+      (document.activeElement as HTMLElement)?.blur();
+    },
+    [clearMessages]
+  );
+
+  const handleFileUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      clearMessages();
+      const file = event.target.files?.[0];
+
       if (file) {
         const validation = validateExcelFile(file);
         if (validation.isValid) {
-          setFileError("");
-          setFormState((prev) => ({ ...prev, file }));
+          setUploadedFile(file);
         } else {
-          setFileError(validation.error || "Invalid file");
-          setFormState((prev) => ({ ...prev, file: null }));
+          setFileError(validation.error || "Invalid file selected.");
+          setUploadedFile(null);
+          event.target.value = ""; // Clear the input
         }
       } else {
-        setFileError("");
-        setFormState((prev) => ({ ...prev, file: null }));
+        setUploadedFile(null);
       }
     },
     [clearMessages]
   );
 
-  // NEW: Handler for the company dropdown
-  const handleCompanyChange = useCallback(
-    (event: SelectChangeEvent<string>) => {
-      clearMessages();
-      setFormState((prev) => ({
-        ...prev,
-        companyName: event.target.value,
-      }));
-    },
-    [clearMessages]
-  );
+  const handleProcess = useCallback(async () => {
+    const selectedCompany = companies.find((c) => c.id === selectedCompanyId);
+    if (!selectedCompany || !uploadedFile) return;
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+    clearMessages();
+    setIsProcessing(true);
 
-      // Basic validation check
-      if (!formState.file || !formState.companyName) {
-        return;
-      }
+    try {
+      // The API client from the old code expects the company name
+      const { blob: processedFileBlob, filename } = await processExcelFile(
+        uploadedFile,
+        selectedCompany.name
+      );
 
-      setFormState((prev) => ({
-        ...prev,
-        isSubmitting: true,
-        submitError: "",
-        successMessage: "",
-      }));
+      // Create a link and trigger the download
+      const url = URL.createObjectURL(processedFileBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-      try {
-        const useMockApi = process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
+      setSuccessMessage("File processed successfully and downloaded!");
 
-        // CHANGED: Pass selectedCompany instead of epcNumber
-        // const processedFileBlob = useMockApi
-        //   ? await mockProcessExcelFile(
-        //       formState.file!,
-        //       formState.selectedCompany
-        //     )
-        //   : await processExcelFile(formState.file!, formState.selectedCompany);
-        const { blob: processedFileBlob, filename } = await processExcelFile(
-          formState.file!,
-          formState.companyName
-        );
-        const url = URL.createObjectURL(processedFileBlob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+      // Reset form state
+      setSelectedCompanyId("");
+      setUploadedFile(null);
+      // To clear the file input visually, you might need a ref or a key change
+      // For simplicity, we'll rely on the user selecting a new file
+      const fileInput = document.getElementById(
+        "file-upload-input"
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+    } catch (error) {
+      const apiError = error as ApiError;
+      setSubmitError(apiError.message || "An unexpected error occurred.");
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [selectedCompanyId, uploadedFile, companies, clearMessages]);
 
-        setFormState((prev) => ({
-          ...prev,
-          isSubmitting: false,
-          successMessage: "File processed successfully and downloaded!",
-          file: null,
-          companyName: "", // Reset selected company
-        }));
-        setFileError("");
-      } catch (error) {
-        const apiError = error as ApiError;
-        setFormState((prev) => ({
-          ...prev,
-          isSubmitting: false,
-          submitError:
-            apiError.message || "An error occurred while processing the file.",
-        }));
-      }
-    },
-    [formState.file, formState.companyName]
-  );
-
-  // CHANGED: Updated form validation check
-  const isFormValid = formState.file && formState.companyName && !fileError;
+  const selectedCompanyName =
+    companies.find((c) => c.id === selectedCompanyId)?.name ||
+    "Choose a company...";
+  const canProcess =
+    selectedCompanyId && uploadedFile && !fileError && !isProcessing;
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper
-        elevation={3}
-        sx={{ p: 4, backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}
-      >
-        <Box textAlign="center" mb={4}>
-          <Typography variant="h4" component="h1" gutterBottom color="primary">
-            Excel File Processor
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Select a company and upload an Excel file to generate EPCs
-          </Typography>
-        </Box>
+    <div className="min-h-screen bg-base-100">
+      {/* Header */}
+      <div className="navbar bg-base-100 shadow-sm border-b">
+        <div className="flex-1">
+          <a href="/" className="btn btn-ghost normal-case text-xl font-bold">
+            <Building2 className="w-6 h-6 mr-2" />
+            Tag Markers
+          </a>
+        </div>
+        <div className="flex-none">
+          <div className="breadcrumbs text-sm">
+            <ul>
+              <li>
+                <a href="/">Home</a>
+              </li>
+              <li>File Upload</li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit}>
-          <Box display="flex" flexDirection="column" gap={3}>
-            {/* NEW: Company Dropdown Section */}
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Select Company
-              </Typography>
-              <FormControl
-                fullWidth
-                required
-                disabled={formState.isSubmitting || companiesLoading}
-              >
-                <InputLabel id="company-select-label">Company</InputLabel>
-                <Select
-                  labelId="company-select-label"
-                  value={formState.companyName}
-                  label="Company"
-                  onChange={handleCompanyChange}
-                >
-                  {companiesLoading ? (
-                    <MenuItem disabled>
-                      <em>Loading companies...</em>
-                    </MenuItem>
-                  ) : companiesError ? (
-                    <MenuItem disabled>
-                      <em>Error loading companies</em>
-                    </MenuItem>
-                  ) : (
-                    companies.map((company) => (
-                      <MenuItem key={company.id} value={company.name}>
-                        {company.name}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
-              {companiesError && (
-                <Alert severity="error" sx={{ mt: 1 }}>
-                  {companiesError}
-                </Alert>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          {/* Main Form Card */}
+          <div className="card bg-base-100 shadow-xl border border-base-300 rounded-2xl">
+            <div className="card-body flex flex-col items-center space-y-6 ">
+              {/* header */}
+              <div className="text-center mb-8 w-full flex flex-col items-center">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-lg">
+                  <Upload className="w-8 h-8 text-primary" />
+                </div>
+                <h1 className="text-2xl font-bold text-base-content mb-2 text-center">
+                  Upload Excel File
+                </h1>
+                <p className="text-base-content/70">
+                  Select a company and upload your Excel file for processing
+                </p>
+              </div>
+              {/* Company Selection */}
+              <div className="form-control w-full max-w-md mx-auto">
+                <label className="label flex justify-between">
+                  <span className="label-text font-semibold">
+                    Select Company
+                  </span>
+                  <span className="label-text-alt text-error text-xs">
+                    Required
+                  </span>
+                </label>
+                <div className="dropdown dropdown-bottom w-full border border-gray-300 rounded-lg">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className={`btn w-full justify-between font-normal normal-case ${
+                      selectedCompanyId
+                        ? "btn-primary text-primary-content rounded-lg"
+                        : "btn-ghost"
+                    }`}
+                  >
+                    <span className="flex items-center">
+                      {companiesLoading ? (
+                        <Spinner className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Building2 className="w-4 h-4 mr-2" />
+                      )}
+                      {companiesLoading
+                        ? "Loading companies..."
+                        : companies.find((c) => c.id === selectedCompanyId)
+                            ?.name || "Choose a company..."}
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-full border border-base-300 mt-1 max-h-60 overflow-y-auto"
+                  >
+                    {companiesError ? (
+                      <li>
+                        <span className="text-error">{companiesError}</span>
+                      </li>
+                    ) : (
+                      companies.map((company) => (
+                        <li key={company.id}>
+                          <a
+                            onClick={() => handleCompanySelect(company.id)}
+                            className={
+                              selectedCompanyId === company.id ? "active" : ""
+                            }
+                          >
+                            <Building2 className="w-4 h-4" />
+                            {company.name}
+                          </a>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+              </div>
+
+              {/* File Upload */}
+              <div className="form-control w-full max-w-md mx-auto">
+                <label className="label flex justify-between">
+                  <span className="label-text font-semibold">
+                    Upload Excel File
+                  </span>
+                  <span className="label-text-alt text-error text-xs">
+                    Required
+                  </span>
+                </label>
+
+                <div className="relative p-2">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileUpload}
+                    className="file-input file-input-bordered file-input-primary w-full"
+                  />
+                </div>
+
+                <label className="label flex justify-between">
+                  <span className="label-text-alt">
+                    Supported formats: .xlsx, .xls
+                  </span>
+                  <span className="label-text-alt">Max size: 5MB</span>
+                </label>
+                {fileError && (
+                  <div className="alert alert-error mt-2">
+                    <AlertCircle className="w-5 h-5 mr-2" />
+                    <span>{fileError}</span>
+                  </div>
+                )}
+              </div>
+              {/* Status Messages */}
+              {successMessage && (
+                <div className="alert alert-success w-full max-w-md mx-auto">
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <span>{successMessage}</span>
+                </div>
               )}
-            </Box>
+              {submitError && (
+                <div className="alert alert-error w-full max-w-md mx-auto">
+                  <AlertCircle className="w-5 h-5 mr-2" />
+                  <span>{submitError}</span>
+                </div>
+              )}
 
-            {/* File Upload Section */}
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Select Excel File
-              </Typography>
-              <FileUpload
-                file={formState.file}
-                onFileSelect={handleFileSelect}
-                error={fileError}
-                disabled={formState.isSubmitting}
-              />
-            </Box>
+              {/* Process Button */}
+              <div className="form-control w-full max-w-md mx-auto pt-4">
+                <button
+                  onClick={handleProcess}
+                  disabled={!canProcess}
+                  className="btn btn-primary btn-lg rounded-lg w-full"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Spinner className="animate-spin w-5 h-5 mr-2" />
+                      Processing File...
+                    </>
+                  ) : (
+                    <>
+                      <FileSpreadsheet className="w-5 h-5 mr-2" />
+                      Process File
+                    </>
+                  )}
+                </button>
+                {!canProcess && !isProcessing && (
+                  <div className="flex justify-center w-full">
+                    <label className="label w-full max-w-md flex justify-center">
+                      <span className="label-text-alt text-base-content/60 text-center break-words">
+                        Please select a company and upload a valid file to
+                        continue
+                      </span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {/* REMOVED: EPC Input Section is gone */}
-
-            {/* Error & Success Messages */}
-            <Collapse in={Boolean(formState.submitError)}>
-              <Alert severity="error" sx={{ mt: 1 }}>
-                {formState.submitError}
-              </Alert>
-            </Collapse>
-            <Collapse in={Boolean(formState.successMessage)}>
-              <Alert severity="success" icon={<CheckCircle />} sx={{ mt: 1 }}>
-                {formState.successMessage}
-              </Alert>
-            </Collapse>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={!isFormValid || formState.isSubmitting}
-              startIcon={
-                formState.isSubmitting ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  <Upload />
-                )
-              }
-              sx={{ mt: 2, py: 1.5, fontSize: "1rem" }}
-            >
-              {formState.isSubmitting ? "Processing..." : "Process File"}
-            </Button>
-          </Box>
-        </form>
-      </Paper>
-    </Container>
+        {/* Instructions Card */}
+        {/* <div className="card bg-base-200 shadow-sm border border-base-300 mt-6">
+          <div className="card-body">
+            <h3 className="card-title text-lg">Instructions</h3>
+            <div className="space-y-2 text-sm text-base-content/70">
+              <div className="flex items-start">
+                <span className="badge badge-primary badge-sm mr-2 mt-0.5">
+                  1
+                </span>
+                <span>Select the company from the dropdown menu</span>
+              </div>
+              <div className="flex items-start">
+                <span className="badge badge-primary badge-sm mr-2 mt-0.5">
+                  2
+                </span>
+                <span>Upload your Excel file (.xlsx or .xls format)</span>
+              </div>
+              <div className="flex items-start">
+                <span className="badge badge-primary badge-sm mr-2 mt-0.5">
+                  3
+                </span>
+                <span>Click "Process File" to begin processing</span>
+              </div>
+              <div className="flex items-start">
+                <span className="badge badge-primary badge-sm mr-2 mt-0.5">
+                  4
+                </span>
+                <span>Wait for the processing to complete</span>
+              </div>
+            </div>
+          </div>
+        </div> */}
+      </div>
+    </div>
   );
-};
-
-export default ProcessingForm;
+}
