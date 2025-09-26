@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Building2, Plus, Eye, Hash, Package, Settings } from "lucide-react";
+import { Building2, Plus } from "lucide-react";
 import {
   getCompanies,
   createCompany,
@@ -12,6 +12,7 @@ import {
   ApiError,
   EpcScheme,
 } from "@/utils/apiClient"; // Assuming these exist in your API client
+import Link from "next/link";
 
 //==============================================================================
 // 1. CREATE COMPANY FORM COMPONENT
@@ -34,6 +35,8 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
   });
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [generateTrue, setGenerateTrue] = useState(true);
 
   const validateForm = (): boolean => {
     const errors = { name: "", startNumber: "" };
@@ -101,7 +104,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
             <input
               type="text"
               placeholder="Enter company name"
-              className={`input input-bordered w-full ${
+              className={`input input-bordered border w-full ${
                 formErrors.name ? "input-error" : ""
               }`}
               value={formData.name}
@@ -117,7 +120,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
           </div>
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-semibold pb-1.5">
+              <span className="label-text font-semibold pb-1.5 ">
                 Default Start Number
               </span>
             </label>
@@ -125,7 +128,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
               type="text"
               placeholder="1234567890"
               maxLength={10}
-              className={`input input-bordered w-full ${
+              className={`input input-bordered w-full border ${
                 formErrors.startNumber ? "input-error" : ""
               }`}
               value={formData.startNumber}
@@ -144,23 +147,51 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
               </label>
             )}
           </div>
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text font-semibold pb-1.5">
-                EPC Scheme
-              </span>
-            </label>
-            <select
-              className="select select-bordered w-full"
-              value={formData.epcScheme}
-              onChange={(e) =>
-                handleInputChange("epcScheme", e.target.value as "GTIN" | "GIF")
-              }
-            >
-              <option value="GTIN">GTIN</option>
-              <option value="GID">GID</option>
-            </select>
-          </div>
+          {/* checkbox for generate upc */}{" "}
+          <label className="label">
+            <input
+              type="checkbox"
+              checked={generateTrue}
+              onChange={() => {
+                setGenerateTrue(!generateTrue);
+                setFormData((prev) => ({
+                  ...prev,
+                  generateUpc: !generateTrue,
+                }));
+              }}
+              className="checkbox border rounded-sm border-gray-400"
+            />
+            <span className="label-text font-semibold pl-2">Generate EPCs</span>
+          </label>
+          {/* epc scheme dropdown */}
+          {generateTrue && (
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-semibold pb-1.5">
+                  EPC Scheme
+                </span>
+              </label>
+              <select
+                className="select border w-full  border-thin"
+                value={formData.epcScheme}
+                onChange={(e) =>
+                  handleInputChange(
+                    "epcScheme",
+                    e.target.value as "GTIN" | "GIF"
+                  )
+                }
+              >
+                <div className="border">
+                  <option className="border-b " value="GTIN">
+                    GTIN
+                  </option>
+                  <option className="" value="GID">
+                    GID
+                  </option>
+                </div>
+              </select>
+            </div>
+          )}
           {submitError && (
             <div className="alert alert-error text-sm">{submitError}</div>
           )}
@@ -308,16 +339,19 @@ export default function CompaniesPage() {
     <div className="min-h-screen bg-base-100">
       <div className="navbar bg-base-100 shadow-sm border-b">
         <div className="flex-1">
-          <a href="/" className="btn btn-ghost normal-case text-xl font-bold">
+          <Link
+            href="/"
+            className="btn btn-ghost normal-case text-xl font-bold"
+          >
             <Building2 className="w-6 h-6 mr-2" />
             Tag Markers
-          </a>
+          </Link>
         </div>
         <div className="flex-none">
           <div className="breadcrumbs text-sm">
             <ul>
               <li>
-                <a href="/">Home</a>
+                <Link href="/">Home</Link>
               </li>
               <li>Companies</li>
             </ul>
@@ -330,9 +364,9 @@ export default function CompaniesPage() {
             <h1 className="text-3xl font-bold text-base-content mb-1">
               Company Management
             </h1>
-            <p className="text-base-content/70 ">
+            {/* <p className="text-base-content/70 ">
               Create new companies and manage existing ones
-            </p>
+            </p> */}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">

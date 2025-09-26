@@ -17,6 +17,7 @@ import {
   CompanyDropdownDto,
   ApiError,
 } from "@/utils/apiClient";
+import Link from "next/link";
 
 export default function UploadPage() {
   // State for form inputs
@@ -33,6 +34,8 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  const [generateTrue, setGenerateTrue] = useState(true);
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -131,9 +134,9 @@ export default function UploadPage() {
     }
   }, [selectedCompanyId, uploadedFile, companies, clearMessages]);
 
-  const selectedCompanyName =
-    companies.find((c) => c.id === selectedCompanyId)?.name ||
-    "Choose a company...";
+  // const selectedCompanyName =
+  //   companies.find((c) => c.id === selectedCompanyId)?.name ||
+  //   "Choose a company...";
   const canProcess =
     selectedCompanyId && uploadedFile && !fileError && !isProcessing;
 
@@ -142,16 +145,19 @@ export default function UploadPage() {
       {/* Header */}
       <div className="navbar bg-base-100 shadow-sm border-b">
         <div className="flex-1">
-          <a href="/" className="btn btn-ghost normal-case text-xl font-bold">
+          <Link
+            href="/"
+            className="btn btn-ghost normal-case text-xl font-bold"
+          >
             <Building2 className="w-6 h-6 mr-2" />
             Tag Markers
-          </a>
+          </Link>
         </div>
         <div className="flex-none">
           <div className="breadcrumbs text-sm">
             <ul>
               <li>
-                <a href="/">Home</a>
+                <Link href="/">Home</Link>
               </li>
               <li>File Upload</li>
             </ul>
@@ -179,13 +185,11 @@ export default function UploadPage() {
               </div>
               {/* Company Selection */}
               <div className="form-control w-full max-w-md mx-auto">
-                <label className="label flex justify-between">
+                <label className="label flex justify-start">
                   <span className="label-text font-semibold">
                     Select Company
                   </span>
-                  <span className="label-text-alt text-error text-xs">
-                    Required
-                  </span>
+                  <span className="label-text-alt text-error text-xs">*</span>
                 </label>
                 <div className="dropdown dropdown-bottom w-full border border-gray-300 rounded-lg">
                   <div
@@ -239,13 +243,11 @@ export default function UploadPage() {
 
               {/* File Upload */}
               <div className="form-control w-full max-w-md mx-auto">
-                <label className="label flex justify-between">
+                <label className="label flex justify-start">
                   <span className="label-text font-semibold">
                     Upload Excel File
                   </span>
-                  <span className="label-text-alt text-error text-xs">
-                    Required
-                  </span>
+                  <span className="label-text-alt text-error text-xs">*</span>
                 </label>
 
                 <div className="relative p-2">
@@ -261,7 +263,7 @@ export default function UploadPage() {
                   <span className="label-text-alt">
                     Supported formats: .xlsx, .xls
                   </span>
-                  <span className="label-text-alt">Max size: 5MB</span>
+                  <span className="label-text-alt">Max size: 10MB</span>
                 </label>
                 {fileError && (
                   <div className="alert alert-error mt-2">
@@ -303,7 +305,7 @@ export default function UploadPage() {
                     </>
                   )}
                 </button>
-                {!canProcess && !isProcessing && (
+                {/* {!canProcess && !isProcessing && (
                   <div className="flex justify-center w-full">
                     <label className="label w-full max-w-md flex justify-center">
                       <span className="label-text-alt text-base-content/60 text-center break-words">
@@ -312,7 +314,7 @@ export default function UploadPage() {
                       </span>
                     </label>
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           </div>

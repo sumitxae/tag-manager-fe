@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Building2,
-  ArrowRightLeft,
-  ChevronRight,
-  Eye,
-  Plus,
-} from "lucide-react";
+import { Building2, ArrowRightLeft, ChevronRight, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {

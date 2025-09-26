@@ -23,7 +23,8 @@ export enum EpcScheme {
 export interface CreateCompanyDto {
   name: string;
   startNumber: number | string;
-  epcScheme: EpcScheme;
+  epcScheme?: EpcScheme;
+  generateUpc?: boolean;
 }
 
 // Matches the CompanyResponseDto on the backend
