@@ -28,6 +28,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({
     name: "",
     startNumber: 0,
     epcScheme: EpcScheme.SGTIN_96,
+    generateUpc: true,
   });
   const [formErrors, setFormErrors] = useState({
     name: "",

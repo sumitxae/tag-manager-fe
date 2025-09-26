@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Building2,
   Upload,
@@ -24,6 +24,7 @@ export default function UploadPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State for company data fetching
   const [companies, setCompanies] = useState<CompanyDropdownDto[]>([]);
@@ -34,8 +35,6 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-
-  const [generateTrue, setGenerateTrue] = useState(true);
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -101,8 +100,8 @@ export default function UploadPage() {
     try {
       // The API client from the old code expects the company name
       const { blob: processedFileBlob, filename } = await processExcelFile(
-        uploadedFile,
-        selectedCompany.name
+        uploadedFile!,
+        selectedCompany!.name
       );
 
       // Create a link and trigger the download
@@ -131,6 +130,9 @@ export default function UploadPage() {
       setSubmitError(apiError.message || "An unexpected error occurred.");
     } finally {
       setIsProcessing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   }, [selectedCompanyId, uploadedFile, companies, clearMessages]);
 
@@ -252,6 +254,8 @@ export default function UploadPage() {
 
                 <div className="relative p-2">
                   <input
+                    ref={fileInputRef}
+                    id="file-upload-input"
                     type="file"
                     accept=".xlsx,.xls"
                     onChange={handleFileUpload}
