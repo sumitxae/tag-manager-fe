@@ -2,6 +2,7 @@
 
 import { Building2, ArrowRightLeft, ChevronRight, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
@@ -9,16 +10,16 @@ export default function Home() {
     <div className="flex flex-col min-h-screen h-screen px-4 ">
       <div className="navbar bg-base-100 shadow-sm border-b">
         <div className="flex-1">
-          <a href="/" className="btn btn-ghost normal-case text-xl font-bold">
+          <Link href="/" className="btn btn-ghost normal-case text-xl font-bold">
             <Building2 className="w-6 h-6 mr-2" />
             Tag Markers
-          </a>
+          </Link>
         </div>
         <div className="flex-none">
           <div className="breadcrumbs text-sm">
             <ul>
               <li>
-                <a href="/">Home</a>
+                <Link href="/">Home</Link>
               </li>
             </ul>
           </div>
